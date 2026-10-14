@@ -4,3 +4,4 @@ Speakeys.app/
 dist/
 .wrangler/
 node_modules/
+site/public/*.dmg

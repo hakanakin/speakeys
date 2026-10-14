@@ -6,17 +6,20 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 APP=Speakeys.app
-VERSION=1.2.0
+VERSION=1.3.0
 # Override with your own identifier: BUNDLE_ID=com.yourname.speakeys ./build.sh
 BUNDLE_ID="${BUNDLE_ID:-com.akin.speakeys}"
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
-swiftc -O -swift-version 5 main.swift -o "$APP/Contents/MacOS/Speakeys" \
-  -framework AppKit -framework AVFoundation -framework Speech -framework Carbon -framework ServiceManagement
+swiftc -O -swift-version 5 Sources/*.swift -o "$APP/Contents/MacOS/Speakeys"
 
-swift make_icon.swift "$APP/Contents/Resources/AppIcon.icns"
+# The icon is drawn from the same geometry as the in-app orb
+TOOL=$(mktemp -d)/make-icon
+swiftc -O -swift-version 5 Tools/make-icon/main.swift Sources/Icosphere.swift -o "$TOOL"
+"$TOOL" "$APP/Contents/Resources/AppIcon.icns"
+rm -rf "$(dirname "$TOOL")"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
