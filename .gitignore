@@ -1,0 +1,6 @@
+Speakeys.app/
+*.log
+.DS_Store
+dist/
+.wrangler/
+node_modules/
