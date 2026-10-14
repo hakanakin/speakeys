@@ -9,12 +9,15 @@ Tap **Right ⌘** and start talking. Your words appear in a small caption bubble
 - **Works like macOS Dictation:** tap Right Command to start. Speakeys stops by itself after about 2 seconds of silence, or you can tap again to finish early. Press Esc to cancel.
 - **Or push-to-talk:** hold Right Command while you speak, and the text is typed when you let go.
 - **Choose your own shortcut:** Right ⌘ (the default), Right ⌥, Right ⌃, Right ⇧ or Fn. You can also record any combination, such as ⌃⌥Space or an F-key. When the trigger is a single key, using it with another key (e.g. ⌘C) still works as a normal shortcut.
+- **Make it yours:** choose the orb's color (seven presets or any custom color) and its motion (Calm, Balanced or Lively).
+- **Update alerts:** Speakeys checks once a day for a new version and sends a notification when one is out. You can turn this off.
 - **Live captions:** see what's being recognized while you speak.
 - **Types anywhere:** the text is pasted at your cursor in any app, and your clipboard is restored afterwards.
 - **14 languages:** English, Türkçe, Deutsch, Français, Español, Italiano, Português, Nederlands, Русский, العربية, 日本語, 한국어 and 中文. Only languages your Mac supports are shown.
-- **Private:** recognition runs on-device when your Mac supports it. The microphone is only on while you're dictating, and nothing is recorded or saved.
+- **Private:** recognition runs on-device when your Mac supports it. The microphone is only on while you're dictating, and nothing is recorded or saved. The only network request is the daily update check, which you can turn off.
 - **Feels like a real Mac app:** Launch at Login, optional start/stop sounds, a menu bar icon that fills while Speakeys is listening, an app icon and an About window.
-- **Small and simple:** one Swift file and no dependencies. You don't need an Xcode project to build it.
+- **Light on your Mac:** about 0.3% CPU at rest. The orb is drawn on the GPU and pauses while hidden or while the display sleeps.
+- **Small and simple:** a few small Swift files and no dependencies. You don't need an Xcode project to build it.
 
 ## Requirements
 
@@ -30,7 +33,7 @@ cd speakeys
 open Speakeys.app
 ```
 
-`build.sh` compiles `main.swift`, generates the app icon with `make_icon.swift`, and creates `Speakeys.app` next to it. To build, copy Speakeys to `/Applications` and launch it in one step:
+`build.sh` compiles everything in `Sources/`, draws the app icon with `Tools/make-icon`, and creates `Speakeys.app` next to it. To build, copy Speakeys to `/Applications` and launch it in one step:
 
 ```sh
 ./build.sh --install
@@ -53,7 +56,7 @@ If you have an Apple Development certificate, the script signs the app with it. 
 ./release.sh --publish  # build it and attach it to a new GitHub release
 ```
 
-Bump `VERSION` in `build.sh` before each release.
+Bump `VERSION` in `build.sh` before each release. `release.sh` also copies the DMG into `site/public/` and writes `version.json`, which the app checks for updates. Deploy the site afterwards to publish both.
 
 ## Permissions
 
@@ -78,8 +81,9 @@ Use the menu bar icon to:
 
 - choose a **Shortcut**, or pick **Record Shortcut…** and press any combination,
 - choose the **Language**,
+- pick the orb's **Motion** and **Color**,
 - change the orb's **Size** and **Position**,
-- turn on **Play Sounds** or **Launch at Login**,
+- turn on **Play Sounds**, **Launch at Login** or **Check for Updates Automatically**, or **Check for Updates…** now,
 - **Hide** (⌘H while the menu is open) or **Quit** Speakeys.
 
 If the Accessibility permission is missing, the menu shows a warning that opens the right page in System Settings.
@@ -96,7 +100,7 @@ Speakeys writes problems to `~/Library/Logs/Speakeys.log`.
 
 ## How it works
 
-- **Speakeys:** an icosphere drawn with Core Graphics. Its surface is bent by a few layered sine waves, and their speed and strength follow your voice level.
+- **Orb:** an icosphere whose surface is bent by a few layered sine waves. Their speed and strength follow your voice level. Each frame only projects about 640 points. The edges are stroked by `CAShapeLayer`s, so rasterizing and the glow happen on the GPU. The orb runs at 30 fps at rest and 60 fps while dictating, and stops drawing when it's covered or the display sleeps.
 - **Speech:** audio from `AVAudioEngine` goes to `SFSpeechRecognizer`, which streams partial results to the caption bubble.
 - **Shortcuts:** a single key like Right ⌘ is detected from modifier-key events. Combinations like ⌃⌥Space are registered as system hot keys, so the key press doesn't also reach the app you're typing in.
 - **Typing:** on release, the final text is placed on the clipboard and pasted with a simulated ⌘V. The previous clipboard contents are put back afterwards.
@@ -108,6 +112,27 @@ The landing page is in `site/`. It is a static page deployed as a Cloudflare Wor
 ```sh
 cd site && npx wrangler deploy
 ```
+
+## Project layout
+
+| File | What it does |
+| --- | --- |
+| `Sources/AppDelegate.swift` | Connects the shortcut, dictation, orb, caption and text insertion |
+| `Sources/ShortcutMonitor.swift` | Watches the trigger system-wide and tells a tap from a hold |
+| `Sources/Shortcut.swift` | The `Trigger` model, presets and key names |
+| `Sources/ShortcutRecorder.swift` | The "Record Shortcut…" window |
+| `Sources/Dictation.swift` | One speech recognition session: partial text, silence detection, final text |
+| `Sources/Microphone.swift` | Audio capture while dictating, and the loudness level |
+| `Sources/TextInserter.swift` | Pastes the text and restores the full clipboard afterwards |
+| `Sources/OrbView.swift` | The animated orb |
+| `Sources/Icosphere.swift` | Orb geometry, shared with the icon tool |
+| `Sources/CaptionPanel.swift` | The live transcript bubble |
+| `Sources/MenuBarController.swift` | The menu bar icon and menu |
+| `Sources/Settings.swift` | Preferences, plus the language, size, position, motion and color options |
+| `Sources/UpdateChecker.swift` | Daily check of `version.json` on the website, and the update notification |
+| `Sources/Overlay.swift`, `Log.swift`, `main.swift` | Small helpers and the entry point |
+| `Tools/make-icon/` | Draws `AppIcon.icns` at build time |
+| `site/` | The website |
 
 ## License
 
