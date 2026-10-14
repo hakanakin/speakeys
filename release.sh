@@ -1,6 +1,6 @@
 #!/bin/bash
 # Builds a signed and notarized dist/Speakeys-<version>.dmg that anyone can open.
-#   ./release.sh            build the DMG
+#   ./release.sh            build the DMG (NOTES="..." adds release notes to the update alert)
 #   ./release.sh --publish  also create a GitHub release with it (needs `gh`)
 #
 # One-time setup:
@@ -46,6 +46,16 @@ xcrun notarytool submit "$DMG" --keychain-profile "$PROFILE" --wait
 xcrun stapler staple "$DMG"
 spctl --assess --type open --context context:primary-signature --verbose "$DMG"
 echo "Ready: $DMG"
+
+# Publish the DMG with the website; /download always points at the latest version
+# Keep the previous version too, so cached /download redirects never hit a missing file
+cp "$DMG" site/public/
+ls -t site/public/Speakeys-*.dmg | tail -n +3 | xargs rm -f
+printf '/download /Speakeys-%s.dmg 302\n' "$VERSION" > site/public/_redirects
+# Read by the app's update check. Optional release notes: NOTES="..." ./release.sh
+python3 -c 'import json, sys; v, n = sys.argv[1:]; print(json.dumps({"version": v, "url": "https://speakeys.akins.app/download", **({"notes": n} if n else {})}))' \
+  "$VERSION" "${NOTES:-}" > site/public/version.json
+echo "Copied to site/public. Deploy with: (cd site && npx wrangler deploy)"
 
 if [[ "${1:-}" == "--publish" ]]; then
   gh release create "v$VERSION" "$DMG" --title "Speakeys $VERSION" --generate-notes
