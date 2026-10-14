@@ -4,4 +4,5 @@ Speakeys.app/
 dist/
 .wrangler/
 node_modules/
-site/public/*.dmg
+# The website is deployed separately and not shared here
+site/

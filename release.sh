@@ -47,7 +47,11 @@ xcrun stapler staple "$DMG"
 spctl --assess --type open --context context:primary-signature --verbose "$DMG"
 echo "Ready: $DMG"
 
-# Publish the DMG with the website; /download always points at the latest version
+# Publish the DMG with the website (kept outside this repo); /download points at the latest version
+if [[ ! -d site/public ]]; then
+  echo "No site/public folder, so the DMG wasn't copied for the website."
+  exit 0
+fi
 # Keep the previous version too, so cached /download redirects never hit a missing file
 cp "$DMG" site/public/
 ls -t site/public/Speakeys-*.dmg | tail -n +3 | xargs rm -f

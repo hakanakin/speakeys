@@ -56,7 +56,7 @@ If you have an Apple Development certificate, the script signs the app with it. 
 ./release.sh --publish  # build it and attach it to a new GitHub release
 ```
 
-Bump `VERSION` in `build.sh` before each release. `release.sh` also copies the DMG into `site/public/` and writes `version.json`, which the app checks for updates. Deploy the site afterwards to publish both.
+Bump `VERSION` in `build.sh` before each release. `release.sh` also copies the DMG and a `version.json` (read by the app's update check) into a local `site/public/` folder for the website, if one exists. The website itself isn't part of this repository.
 
 ## Permissions
 
@@ -105,14 +105,6 @@ Speakeys writes problems to `~/Library/Logs/Speakeys.log`.
 - **Shortcuts:** a single key like Right ⌘ is detected from modifier-key events. Combinations like ⌃⌥Space are registered as system hot keys, so the key press doesn't also reach the app you're typing in.
 - **Typing:** on release, the final text is placed on the clipboard and pasted with a simulated ⌘V. The previous clipboard contents are put back afterwards.
 
-## Website
-
-The landing page is in `site/`. It is a static page deployed as a Cloudflare Worker with static assets:
-
-```sh
-cd site && npx wrangler deploy
-```
-
 ## Project layout
 
 | File | What it does |
@@ -132,7 +124,6 @@ cd site && npx wrangler deploy
 | `Sources/UpdateChecker.swift` | Daily check of `version.json` on the website, and the update notification |
 | `Sources/Overlay.swift`, `Log.swift`, `main.swift` | Small helpers and the entry point |
 | `Tools/make-icon/` | Draws `AppIcon.icns` at build time |
-| `site/` | The website |
 
 ## License
 
